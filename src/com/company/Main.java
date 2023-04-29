@@ -14,7 +14,7 @@ import java.util.stream.IntStream;
 public class Main {
     private static final int NUM_OF_THREADS = 4;
     private static final int NUM_OF_BLURS = 8;
-    private static ExecutorService threadPool = Executors.newFixedThreadPool(NUM_OF_THREADS);
+    private static final ExecutorService threadPool = Executors.newFixedThreadPool(NUM_OF_THREADS);
 
 
     public static BufferedImage singleThreadBlur(BufferedImage image, int[] filter, int filterWidth) {
@@ -91,7 +91,7 @@ public class Main {
         final int sum = IntStream.of(filter).sum();
 
         int[] input = image.getRGB(0, 0, width, height, null, 0, width);
-        System.out.println(System.currentTimeMillis() - start);
+        System.out.println("Reading pixels took: " + (System.currentTimeMillis() - start));
 
         int[] output = new int[input.length];
 
@@ -107,25 +107,16 @@ public class Main {
         long loopStart = System.currentTimeMillis();
 
         List<Callable<Object>> tasks = new ArrayList<>(NUM_OF_THREADS);
+        int sectionHeight = h / NUM_OF_THREADS;
+        int yRemainder = h - sectionHeight * NUM_OF_THREADS;
 
         for (int i = 0; i < NUM_OF_THREADS; i++) {
-            int rowLength = (int) Math.sqrt(NUM_OF_THREADS);
-            System.out.println("rl "+ rowLength);
-            int sectionWidth = rowLength == 0 ? w : w / rowLength;
-            int sectionHeight = rowLength == 0 ? h : h / rowLength;
+            int yStart = i * (h / NUM_OF_THREADS);
+            int yEnd = i == NUM_OF_THREADS - 1 ? yStart + sectionHeight + yRemainder : yStart + sectionHeight;
 
-            int currentRow = rowLength == 0 ? 0 : i / rowLength;
-            int currentColumn = rowLength == 0 ? 0 : i % rowLength;
-
-            int xStart = currentColumn * sectionWidth;
-            int yStart = currentRow * sectionHeight;
-            int xEnd = xStart + sectionWidth;
-            int yEnd = yStart + sectionHeight;
-
-            System.out.println(xStart + " -> " + xEnd + " " + yStart + " -> " + yEnd + " " + currentRow + " " + currentColumn);
             tasks.add(Executors.callable(() -> {
                 for (int y = yStart; y < yEnd; y++) {
-                    for (int x = xStart; x < xEnd; x++) {
+                    for (int x = 0; x < w; x++) {
                         int r = 0;
                         int g = 0;
                         int b = 0;
@@ -166,10 +157,6 @@ public class Main {
         return result;
     }
 
-    public static void main(String[] args) {
-        blurImage(true);
-    }
-
     private static void blurImage(boolean isMultiThread) {
         int[] filter = {
                 1, 2, 1,
@@ -177,7 +164,7 @@ public class Main {
                 1, 2, 1};
         int filterWidth = 3;
         try {
-            BufferedImage img = ImageIO.read(new File("beach2.jpeg"));
+            BufferedImage img = ImageIO.read(new File("street.jpeg"));
             BufferedImage blurred = img;
             long start = System.currentTimeMillis();
             for (int i = 0; i < NUM_OF_BLURS; i++) {
@@ -192,6 +179,10 @@ public class Main {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    public static void main(String[] args) {
+        blurImage(true);
     }
 
 }
