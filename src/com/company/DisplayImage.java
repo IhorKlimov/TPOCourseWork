@@ -12,8 +12,8 @@ import javax.swing.JLabel;
 public class DisplayImage {
 
     public DisplayImage(BufferedImage img) throws IOException {
-        int width = (int) (img.getWidth() / 3);
-        int height = (int) (img.getHeight() / 3);
+        int width = (int) (img.getWidth() / 1);
+        int height = (int) (img.getHeight() / 1);
 
 
         ImageIcon icon = new ImageIcon(getScaledImage(img, width, height));

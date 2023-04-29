@@ -90,7 +90,26 @@ public class Main {
         final int height = image.getHeight();
         final int sum = IntStream.of(filter).sum();
 
-        int[] input = image.getRGB(0, 0, width, height, null, 0, width);
+//        int[] input = image.getRGB(0, 0, width, height, null, 0, width);
+        int[] input = new int[width * height];
+
+        List<Callable<Object>> pixelsTask = new ArrayList<>(NUM_OF_THREADS);
+
+        for (int i = 0; i < NUM_OF_THREADS; i++) {
+            int finalI = i;
+            pixelsTask.add(Executors.callable(() -> {
+                int startY = height / NUM_OF_THREADS * finalI;
+                int[] section = image.getRGB(0, startY, width, height / NUM_OF_THREADS, null, 0, width);
+                System.arraycopy(section, 0, input, section.length * finalI, section.length);
+            }));
+        }
+
+        try {
+            threadPool.invokeAll(pixelsTask);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
         System.out.println("Reading pixels took: " + (System.currentTimeMillis() - start));
 
         int[] output = new int[input.length];
@@ -164,7 +183,7 @@ public class Main {
                 1, 2, 1};
         int filterWidth = 3;
         try {
-            BufferedImage img = ImageIO.read(new File("street.jpeg"));
+            BufferedImage img = ImageIO.read(new File("beach2.jpeg"));
             BufferedImage blurred = img;
             long start = System.currentTimeMillis();
             for (int i = 0; i < NUM_OF_BLURS; i++) {
