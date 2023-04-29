@@ -4,11 +4,18 @@ import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
-import java.sql.Array;
 import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.stream.IntStream;
 
 public class Main {
+    private static final int NUM_OF_THREADS = 4;
+    private static final int NUM_OF_BLURS = 8;
+    private static ExecutorService threadPool = Executors.newFixedThreadPool(NUM_OF_THREADS);
+
 
     public static BufferedImage singleThreadBlur(BufferedImage image, int[] filter, int filterWidth) {
         if (filter.length % filterWidth != 0) {
@@ -99,12 +106,11 @@ public class Main {
 
         long loopStart = System.currentTimeMillis();
 
+        List<Callable<Object>> tasks = new ArrayList<>(NUM_OF_THREADS);
 
-        ArrayList<Thread> threads = new ArrayList<>();
-        int numOfThreads = 4;
-
-        for (int i = 0; i < numOfThreads; i++) {
-            int rowLength = (int) Math.sqrt(numOfThreads);
+        for (int i = 0; i < NUM_OF_THREADS; i++) {
+            int rowLength = (int) Math.sqrt(NUM_OF_THREADS);
+            System.out.println("rl "+ rowLength);
             int sectionWidth = rowLength == 0 ? w : w / rowLength;
             int sectionHeight = rowLength == 0 ? h : h / rowLength;
 
@@ -117,7 +123,7 @@ public class Main {
             int yEnd = yStart + sectionHeight;
 
             System.out.println(xStart + " -> " + xEnd + " " + yStart + " -> " + yEnd + " " + currentRow + " " + currentColumn);
-            threads.add(new Thread(() -> {
+            tasks.add(Executors.callable(() -> {
                 for (int y = yStart; y < yEnd; y++) {
                     for (int x = xStart; x < xEnd; x++) {
                         int r = 0;
@@ -146,14 +152,11 @@ public class Main {
             }));
         }
 
-        threads.forEach(thread -> thread.start());
-        threads.forEach(thread -> {
-            try {
-                thread.join();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        });
+        try {
+            threadPool.invokeAll(tasks);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
 
         long loop = System.currentTimeMillis() - loopStart;
 
@@ -164,57 +167,10 @@ public class Main {
     }
 
     public static void main(String[] args) {
-//        singleThreadBlur();
-        multiThreadBlur();
-
-//        long start = System.currentTimeMillis();
-//
-//        // 11_136
-//
-//        ArrayList<Thread> threads = new ArrayList<>();
-//
-//        threads.add(new Thread(() -> {
-//            for (int i = 0; i < 25_000_000; i++) {
-//                double d = i * Math.PI / Math.sin(i * Math.PI);
-//
-//            }
-//        }));
-//        threads.add(new Thread(() -> {
-//            for (int i = 0; i < 25_000_000; i++) {
-//                double d = i * Math.PI / Math.sin(i * Math.PI);
-//
-//            }
-//        }));
-//
-//        threads.add(new Thread(() -> {
-//            for (int i = 0; i < 25_000_000; i++) {
-//                double d = i * Math.PI / Math.sin(i * Math.PI);
-//
-//            }
-//        }));
-//
-//        threads.add(new Thread(() -> {
-//            for (int i = 0; i < 25_000_000; i++) {
-//                double d = i * Math.PI / Math.sin(i * Math.PI);
-//
-//            }
-//        }));
-//
-//
-//        threads.forEach(thread -> thread.start());
-//        threads.forEach(thread -> {
-//            try {
-//                thread.join();
-//            } catch (InterruptedException e) {
-//                e.printStackTrace();
-//            }
-//        });
-//
-//        System.out.println(System.currentTimeMillis() - start);
+        blurImage(true);
     }
 
-    private static void singleThreadBlur() {
-        //        int[] filter = {1, 2, 1, 2, 4, 2, 1, 2, 1};
+    private static void blurImage(boolean isMultiThread) {
         int[] filter = {
                 1, 2, 1,
                 2, 4, 2,
@@ -223,29 +179,15 @@ public class Main {
         try {
             BufferedImage img = ImageIO.read(new File("beach2.jpeg"));
             BufferedImage blurred = img;
-            for (int i = 0; i < 1; i++) {
-                blurred = singleThreadBlur(blurred, filter, filterWidth);
+            long start = System.currentTimeMillis();
+            for (int i = 0; i < NUM_OF_BLURS; i++) {
+                if (isMultiThread) {
+                    blurred = multiThreadBlur(blurred, filter, filterWidth);
+                } else {
+                    blurred = singleThreadBlur(blurred, filter, filterWidth);
+                }
             }
-
-            new DisplayImage(blurred);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private static void multiThreadBlur() {
-        //        int[] filter = {1, 2, 1, 2, 4, 2, 1, 2, 1};
-        int[] filter = {
-                1, 2, 1,
-                2, 4, 2,
-                1, 2, 1};
-        int filterWidth = 3;
-        try {
-            BufferedImage img = ImageIO.read(new File("beach2.jpeg"));
-            BufferedImage blurred = img;
-            for (int i = 0; i < 1; i++) {
-                blurred = multiThreadBlur(blurred, filter, filterWidth);
-            }
+            System.out.println("Total time: " + (System.currentTimeMillis() - start));
             new DisplayImage(blurred);
         } catch (IOException e) {
             e.printStackTrace();
