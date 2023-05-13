@@ -5,15 +5,19 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.IntStream;
 
+import static com.company.SaveImage.saveImage;
+import static java.lang.Math.abs;
+
 public class Main {
-    private static final int NUM_OF_THREADS = 4;
-    private static final int NUM_OF_BLURS = 8;
+    private static final int NUM_OF_THREADS = 7;
+    private static final int NUM_OF_BLURS = 1;
     private static final ExecutorService threadPool = Executors.newFixedThreadPool(NUM_OF_THREADS);
 
 
@@ -29,7 +33,7 @@ public class Main {
         final int sum = IntStream.of(filter).sum();
 
         int[] input = image.getRGB(0, 0, width, height, null, 0, width);
-        System.out.println(System.currentTimeMillis() - start);
+        System.out.println("Image pixel read took: " + (System.currentTimeMillis() - start));
 
         int[] output = new int[input.length];
 
@@ -39,9 +43,6 @@ public class Main {
 
         int h = (height - filter.length / filterWidth + 1);
         int w = (width - filterWidth + 1);
-//        System.out.println(h + " " + w);
-
-        System.out.println(System.currentTimeMillis() - start);
 
         long loopStart = System.currentTimeMillis();
 
@@ -57,10 +58,17 @@ public class Main {
                         int col = input[pixelIndex];
                         int factor = filter[filterIndex];
 
+                        int red = (col >>> 16) & 0xFF;
+                        int green = (col >>> 8) & 0xFF;
+                        int blue = col & 0xFF;
+
+//                        System.out.println("color check " + red + " " + green + " " + blue + " " + (col) + " "+ Integer.toBinaryString(col));
+                        // 1111 1111 0110 1111 0111 0101 0111 0011
                         // sum up color channels seperately
-                        r += ((col >>> 16) & 0xFF) * factor;
-                        g += ((col >>> 8) & 0xFF) * factor;
-                        b += (col & 0xFF) * factor;
+                        r += red * factor;
+                        g += green * factor;
+                        b += blue * factor;
+//                        break;
                     }
                 }
                 r /= sum;
@@ -75,7 +83,7 @@ public class Main {
 
         BufferedImage result = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
         result.setRGB(0, 0, width, height, output, 0, width);
-        System.out.println(System.currentTimeMillis() - start + " " + loop);
+        System.out.println("Total: " + (System.currentTimeMillis() - start) + " blur took: " + loop);
         return result;
     }
 
@@ -90,7 +98,6 @@ public class Main {
         final int height = image.getHeight();
         final int sum = IntStream.of(filter).sum();
 
-//        int[] input = image.getRGB(0, 0, width, height, null, 0, width);
         int[] input = new int[width * height];
 
         List<Callable<Object>> pixelsTask = new ArrayList<>(NUM_OF_THREADS);
@@ -177,13 +184,16 @@ public class Main {
     }
 
     private static void blurImage(boolean isMultiThread) {
-        int[] filter = {
-                1, 2, 1,
-                2, 4, 2,
-                1, 2, 1};
-        int filterWidth = 3;
+//        int[] filter = {
+//                1, 2, 1,
+//                2, 4, 2,
+//                1, 2, 1
+//        };
+        int radius = 3;
+        int filterWidth = radius * 2 + 1;
+        int[] filter = generateMatrix(radius);
         try {
-            BufferedImage img = ImageIO.read(new File("beach2.jpeg"));
+            BufferedImage img = ImageIO.read(new File("street3.jpeg"));
             BufferedImage blurred = img;
             long start = System.currentTimeMillis();
             for (int i = 0; i < NUM_OF_BLURS; i++) {
@@ -195,13 +205,42 @@ public class Main {
             }
             System.out.println("Total time: " + (System.currentTimeMillis() - start));
             new DisplayImage(blurred);
+//            saveImage(blurred);
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
     public static void main(String[] args) {
-        blurImage(true);
+        blurImage(false);
+//        generateMatrix(1);
+    }
+
+    private static int[] generateMatrix(int radius) {
+        int rowLength = radius * 2 + 1;
+
+        int[] result = new int[rowLength * rowLength];
+
+        int center = radius;
+        int centerValue = 100;
+        int cellLength = centerValue / (radius + 2);
+
+        for (int row = 0; row < rowLength; row++) {
+            String res = "";
+            for (int column = 0; column < rowLength; column++) {
+                int currentIndex = row * rowLength + column;
+
+                int xDelta = abs(center - column) * cellLength;
+                int yDelta = abs(center - row) * cellLength;
+                int distance = (int) Math.round(Math.sqrt(xDelta * xDelta + yDelta * yDelta));
+                result[currentIndex] = centerValue - distance;
+
+                res += result[currentIndex] + " ";
+            }
+            System.out.println(res);
+        }
+        System.out.println(Arrays.toString(result));
+        return result;
     }
 
 }
