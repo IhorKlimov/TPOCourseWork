@@ -58,24 +58,24 @@ public class Main {
                         int col = input[pixelIndex];
                         int factor = filter[filterIndex];
 
-                        int red = (col >>> 16) & 0xFF;
-                        int green = (col >>> 8) & 0xFF;
-                        int blue = col & 0xFF;
+                        int red = (col >>> 16) & 255;
+                        int green = (col >>> 8) & 255;
+                        int blue = col & 255;
 
-//                        System.out.println("color check " + red + " " + green + " " + blue + " " + (col) + " "+ Integer.toBinaryString(col));
+                        System.out.println("color check " + red + " " + green + " " + blue + " " + (col) + " "+ Integer.toBinaryString(col));
                         // 1111 1111 0110 1111 0111 0101 0111 0011
                         // sum up color channels seperately
                         r += red * factor;
                         g += green * factor;
                         b += blue * factor;
-//                        break;
+                        break;
                     }
                 }
                 r /= sum;
                 g /= sum;
                 b /= sum;
                 // combine channels with full opacity
-                output[x + centerOffsetX + (y + centerOffsetY) * width] = (r << 16) | (g << 8) | b | 0xFF000000;
+                output[x + centerOffsetX + (y + centerOffsetY) * width] = (r << 16) | (g << 8) | b | 255000000;
             }
         }
 
@@ -154,16 +154,16 @@ public class Main {
                                 int factor = filter[filterIndex];
 
                                 // sum up color channels seperately
-                                r += ((col >>> 16) & 0xFF) * factor;
-                                g += ((col >>> 8) & 0xFF) * factor;
-                                b += (col & 0xFF) * factor;
+                                r += ((col >>> 16) & 255) * factor;
+                                g += ((col >>> 8) & 255) * factor;
+                                b += (col & 255) * factor;
                             }
                         }
                         r /= sum;
                         g /= sum;
                         b /= sum;
                         // combine channels with full opacity
-                        output[x + centerOffsetX + (y + centerOffsetY) * width] = (r << 16) | (g << 8) | b | 0xFF000000;
+                        output[x + centerOffsetX + (y + centerOffsetY) * width] = (r << 16) | (g << 8) | b | 255000000;
                     }
                 }
             }));
@@ -212,8 +212,17 @@ public class Main {
     }
 
     public static void main(String[] args) {
-        blurImage(false);
-//        generateMatrix(1);
+//        blurImage(false);
+        int i = -8226438;
+        System.out.println(Integer.toBinaryString(i));
+        i = i >>> 16;
+        System.out.println(Integer.toBinaryString(i));
+        System.out.println(i);
+        i = i & 255;
+        System.out.println(Integer.toBinaryString(i));
+        System.out.println(i);
+        System.out.println(Integer.toBinaryString(255));
+//        generateMatrix(4);
     }
 
     private static int[] generateMatrix(int radius) {
@@ -239,7 +248,6 @@ public class Main {
             }
             System.out.println(res);
         }
-        System.out.println(Arrays.toString(result));
         return result;
     }
 

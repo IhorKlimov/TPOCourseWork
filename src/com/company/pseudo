@@ -1,0 +1,27 @@
+image = file("street.jpeg")
+pixelsArray = image.getPixels()
+weights = [1, 2, 1, 2, 4, 2, 1, 2, 1]
+result = []
+
+for pixel in pixelsArray:
+    red = pixel.getRed()
+    green = pixel.getGreen()
+    blue = pixel.getBlue()
+
+    resultRed = 0
+    resultGreen = 0
+    resultBlue = 0
+
+    for surrounding in pixel.getAllSurroundingPixels():
+        resultRed += surrounding * weights.getWeightFor(surrounding)
+        resultGreen += surrounding * weights.getWeightFor(surrounding)
+        resultBlue += surrounding * weights.getWeightFor(surrounding)
+
+    totalWeight = weights.getTotalSum()
+    resultPixel = Pixel(resultRed, resultGreen, resultBlue)
+    result.add(resultPixel)
+
+resultImage = Image(result)
+displayImage(resultImage)
+
+
