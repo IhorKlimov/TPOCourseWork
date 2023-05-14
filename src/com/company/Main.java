@@ -62,20 +62,20 @@ public class Main {
                         int green = (col >>> 8) & 255;
                         int blue = col & 255;
 
-                        System.out.println("color check " + red + " " + green + " " + blue + " " + (col) + " "+ Integer.toBinaryString(col));
+//                        System.out.println("color check " + red + " " + green + " " + blue + " " + (col) + " " + Integer.toBinaryString(col));
                         // 1111 1111 0110 1111 0111 0101 0111 0011
                         // sum up color channels seperately
                         r += red * factor;
                         g += green * factor;
                         b += blue * factor;
-                        break;
+//                        break;
                     }
                 }
                 r /= sum;
                 g /= sum;
                 b /= sum;
                 // combine channels with full opacity
-                output[x + centerOffsetX + (y + centerOffsetY) * width] = (r << 16) | (g << 8) | b | 255000000;
+                output[x + centerOffsetX + (y + centerOffsetY) * width] = 255 << 24 | (r << 16) | (g << 8) | b;
             }
         }
 
@@ -163,7 +163,8 @@ public class Main {
                         g /= sum;
                         b /= sum;
                         // combine channels with full opacity
-                        output[x + centerOffsetX + (y + centerOffsetY) * width] = (r << 16) | (g << 8) | b | 255000000;
+//                        output[x + centerOffsetX + (y + centerOffsetY) * width] = (r << 16) | (g << 8) | b | 255000000;
+                        output[x + centerOffsetX + (y + centerOffsetY) * width] = 255 << 24 | (r << 16) | (g << 8) | b;
                     }
                 }
             }));
@@ -189,7 +190,7 @@ public class Main {
 //                2, 4, 2,
 //                1, 2, 1
 //        };
-        int radius = 3;
+        int radius = 1;
         int filterWidth = radius * 2 + 1;
         int[] filter = generateMatrix(radius);
         try {
@@ -212,16 +213,26 @@ public class Main {
     }
 
     public static void main(String[] args) {
-//        blurImage(false);
-        int i = -8226438;
-        System.out.println(Integer.toBinaryString(i));
-        i = i >>> 16;
-        System.out.println(Integer.toBinaryString(i));
-        System.out.println(i);
-        i = i & 255;
-        System.out.println(Integer.toBinaryString(i));
-        System.out.println(i);
-        System.out.println(Integer.toBinaryString(255));
+        blurImage(false);
+        int newRed = 200;
+        int newGreen = 120;
+        int newBlue = 231;
+        System.out.println(Integer.toBinaryString(newRed));
+        System.out.println(Integer.toBinaryString(newGreen));
+        System.out.println(Integer.toBinaryString(newBlue));
+
+        // 1111 1111 1010 1111 1101 1110 0111
+        int res = 255 << 24 | (newRed << 16) | (newGreen << 8) | newBlue;
+        System.out.println(Integer.toBinaryString(res) + " " + res);
+
+
+//        i = i >>> 16;
+//        System.out.println(Integer.toBinaryString(i));
+//        System.out.println(i);
+//        i = i & 255;
+//        System.out.println(Integer.toBinaryString(i));
+//        System.out.println(i);
+//        System.out.println(Integer.toBinaryString(255));
 //        generateMatrix(4);
     }
 
