@@ -20,7 +20,6 @@ public class Main {
     private static final int NUM_OF_BLURS = 1;
     private static final ExecutorService threadPool = Executors.newFixedThreadPool(NUM_OF_THREADS);
 
-
     public static BufferedImage singleThreadBlur(BufferedImage image, int[] filter, int filterWidth) {
         if (filter.length % filterWidth != 0) {
             throw new IllegalArgumentException("filter contains a incomplete row");
@@ -62,19 +61,15 @@ public class Main {
                         int green = (col >>> 8) & 255;
                         int blue = col & 255;
 
-//                        System.out.println("color check " + red + " " + green + " " + blue + " " + (col) + " " + Integer.toBinaryString(col));
-                        // 1111 1111 0110 1111 0111 0101 0111 0011
-                        // sum up color channels seperately
                         r += red * factor;
                         g += green * factor;
                         b += blue * factor;
-//                        break;
                     }
                 }
                 r /= sum;
                 g /= sum;
                 b /= sum;
-                // combine channels with full opacity
+
                 output[x + centerOffsetX + (y + centerOffsetY) * width] = 255 << 24 | (r << 16) | (g << 8) | b;
             }
         }
@@ -153,7 +148,7 @@ public class Main {
                                 int col = input[pixelIndex];
                                 int factor = filter[filterIndex];
 
-                                // sum up color channels seperately
+
                                 r += ((col >>> 16) & 255) * factor;
                                 g += ((col >>> 8) & 255) * factor;
                                 b += (col & 255) * factor;
@@ -162,8 +157,7 @@ public class Main {
                         r /= sum;
                         g /= sum;
                         b /= sum;
-                        // combine channels with full opacity
-//                        output[x + centerOffsetX + (y + centerOffsetY) * width] = (r << 16) | (g << 8) | b | 255000000;
+
                         output[x + centerOffsetX + (y + centerOffsetY) * width] = 255 << 24 | (r << 16) | (g << 8) | b;
                     }
                 }
@@ -185,11 +179,6 @@ public class Main {
     }
 
     private static void blurImage(boolean isMultiThread) {
-//        int[] filter = {
-//                1, 2, 1,
-//                2, 4, 2,
-//                1, 2, 1
-//        };
         int radius = 1;
         int filterWidth = radius * 2 + 1;
         int[] filter = generateMatrix(radius);
