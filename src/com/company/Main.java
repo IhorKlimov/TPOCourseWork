@@ -12,15 +12,14 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.IntStream;
 
-import static com.company.SaveImage.saveImage;
 import static java.lang.Math.abs;
 
 public class Main {
-    private static final int NUM_OF_THREADS = 7;
+    private static final int NUM_OF_THREADS = 2;
     private static final int NUM_OF_BLURS = 1;
     private static final ExecutorService threadPool = Executors.newFixedThreadPool(NUM_OF_THREADS);
 
-    public static BufferedImage singleThreadBlur(BufferedImage image, int[] filter, int filterWidth) {
+    public static Result singleThreadBlur(BufferedImage image, int[] filter, int filterWidth) {
         if (filter.length % filterWidth != 0) {
             throw new IllegalArgumentException("filter contains a incomplete row");
         }
@@ -79,10 +78,10 @@ public class Main {
         BufferedImage result = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
         result.setRGB(0, 0, width, height, output, 0, width);
         System.out.println("Total: " + (System.currentTimeMillis() - start) + " blur took: " + loop);
-        return result;
+        return new Result(result, output);
     }
 
-    public static BufferedImage multiThreadBlur(BufferedImage image, int[] filter, int filterWidth) {
+    public static Result multiThreadBlur(BufferedImage image, int[] filter, int filterWidth) {
         if (filter.length % filterWidth != 0) {
             throw new IllegalArgumentException("filter contains a incomplete row");
         }
@@ -96,13 +95,17 @@ public class Main {
         int[] input = new int[width * height];
 
         List<Callable<Object>> pixelsTask = new ArrayList<>(NUM_OF_THREADS);
+        int yRem = height % NUM_OF_THREADS;
 
         for (int i = 0; i < NUM_OF_THREADS; i++) {
             int finalI = i;
             pixelsTask.add(Executors.callable(() -> {
-                int startY = height / NUM_OF_THREADS * finalI;
-                int[] section = image.getRGB(0, startY, width, height / NUM_OF_THREADS, null, 0, width);
-                System.arraycopy(section, 0, input, section.length * finalI, section.length);
+                int sectionHeight = height / NUM_OF_THREADS;
+                int startY = sectionHeight * finalI;
+                int extra = finalI == NUM_OF_THREADS - 1 ? yRem : 0;
+                int[] section = image.getRGB(0, startY, width, sectionHeight + extra, null, 0, width);
+                System.out.println("h check " + sectionHeight + " " + extra + " " + section.length);
+                System.arraycopy(section, 0, input, sectionHeight * width * finalI, section.length);
             }));
         }
 
@@ -175,10 +178,10 @@ public class Main {
         BufferedImage result = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
         result.setRGB(0, 0, width, height, output, 0, width);
         System.out.println(System.currentTimeMillis() - start + " " + loop);
-        return result;
+        return new Result(result, output);
     }
 
-    private static void blurImage(boolean isMultiThread) {
+    private static Result blurImage(boolean isMultiThread) {
         int radius = 1;
         int filterWidth = radius * 2 + 1;
         int[] filter = generateMatrix(radius);
@@ -186,43 +189,31 @@ public class Main {
             BufferedImage img = ImageIO.read(new File("street3.jpeg"));
             BufferedImage blurred = img;
             long start = System.currentTimeMillis();
+            Result result = null;
             for (int i = 0; i < NUM_OF_BLURS; i++) {
                 if (isMultiThread) {
-                    blurred = multiThreadBlur(blurred, filter, filterWidth);
+                    result = multiThreadBlur(blurred, filter, filterWidth);
                 } else {
-                    blurred = singleThreadBlur(blurred, filter, filterWidth);
+                    result = singleThreadBlur(blurred, filter, filterWidth);
                 }
+                blurred = result.getImage();
             }
             System.out.println("Total time: " + (System.currentTimeMillis() - start));
             new DisplayImage(blurred);
 //            saveImage(blurred);
+            return result;
         } catch (IOException e) {
             e.printStackTrace();
         }
+        return null;
     }
 
     public static void main(String[] args) {
-        blurImage(false);
-        int newRed = 200;
-        int newGreen = 120;
-        int newBlue = 231;
-        System.out.println(Integer.toBinaryString(newRed));
-        System.out.println(Integer.toBinaryString(newGreen));
-        System.out.println(Integer.toBinaryString(newBlue));
+        Result bufferedImage = blurImage(false);
+        Result bufferedImage2 = blurImage(true);
 
-        // 1111 1111 1010 1111 1101 1110 0111
-        int res = 255 << 24 | (newRed << 16) | (newGreen << 8) | newBlue;
-        System.out.println(Integer.toBinaryString(res) + " " + res);
-
-
-//        i = i >>> 16;
-//        System.out.println(Integer.toBinaryString(i));
-//        System.out.println(i);
-//        i = i & 255;
-//        System.out.println(Integer.toBinaryString(i));
-//        System.out.println(i);
-//        System.out.println(Integer.toBinaryString(255));
-//        generateMatrix(4);
+        System.out.println(bufferedImage.getPixels().length + " " + bufferedImage2.getPixels().length);
+        System.out.println(Arrays.equals(bufferedImage.getPixels(), bufferedImage2.getPixels()));
     }
 
     private static int[] generateMatrix(int radius) {
