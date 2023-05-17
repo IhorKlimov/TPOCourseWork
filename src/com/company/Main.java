@@ -19,7 +19,7 @@ public class Main {
     private static final int NUM_OF_BLURS = 1;
     private static final ExecutorService threadPool = Executors.newFixedThreadPool(NUM_OF_THREADS);
 
-    public static Result singleThreadBlur(BufferedImage image, int[] filter, int filterWidth) {
+    public static BufferedImage singleThreadBlur(BufferedImage image, int[] filter, int filterWidth) {
         if (filter.length % filterWidth != 0) {
             throw new IllegalArgumentException("filter contains a incomplete row");
         }
@@ -78,10 +78,10 @@ public class Main {
         BufferedImage result = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
         result.setRGB(0, 0, width, height, output, 0, width);
         System.out.println("Total: " + (System.currentTimeMillis() - start) + " blur took: " + loop);
-        return new Result(result, output);
+        return result;
     }
 
-    public static Result multiThreadBlur(BufferedImage image, int[] filter, int filterWidth) {
+    public static BufferedImage multiThreadBlur(BufferedImage image, int[] filter, int filterWidth) {
         if (filter.length % filterWidth != 0) {
             throw new IllegalArgumentException("filter contains a incomplete row");
         }
@@ -178,30 +178,27 @@ public class Main {
         BufferedImage result = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
         result.setRGB(0, 0, width, height, output, 0, width);
         System.out.println(System.currentTimeMillis() - start + " " + loop);
-        return new Result(result, output);
+        return result;
     }
 
-    private static Result blurImage(boolean isMultiThread) {
+    private static BufferedImage blurImage(boolean isMultiThread) {
         int radius = 1;
         int filterWidth = radius * 2 + 1;
         int[] filter = generateMatrix(radius);
         try {
-            BufferedImage img = ImageIO.read(new File("street3.jpeg"));
-            BufferedImage blurred = img;
+            BufferedImage image = ImageIO.read(new File("street3.jpeg"));
             long start = System.currentTimeMillis();
-            Result result = null;
             for (int i = 0; i < NUM_OF_BLURS; i++) {
                 if (isMultiThread) {
-                    result = multiThreadBlur(blurred, filter, filterWidth);
+                    image = multiThreadBlur(image, filter, filterWidth);
                 } else {
-                    result = singleThreadBlur(blurred, filter, filterWidth);
+                    image = singleThreadBlur(image, filter, filterWidth);
                 }
-                blurred = result.getImage();
             }
             System.out.println("Total time: " + (System.currentTimeMillis() - start));
-            new DisplayImage(blurred);
+            new DisplayImage(image);
 //            saveImage(blurred);
-            return result;
+            return image;
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -209,11 +206,18 @@ public class Main {
     }
 
     public static void main(String[] args) {
-        Result bufferedImage = blurImage(false);
-        Result bufferedImage2 = blurImage(true);
+        BufferedImage bufferedImage = blurImage(false);
+        BufferedImage bufferedImage2 = blurImage(true);
 
-        System.out.println(bufferedImage.getPixels().length + " " + bufferedImage2.getPixels().length);
-        System.out.println(Arrays.equals(bufferedImage.getPixels(), bufferedImage2.getPixels()));
+        int widthOne = bufferedImage.getWidth();
+        int heightOne = bufferedImage.getHeight();
+        int[] pixelsOne = bufferedImage.getRGB(0, 0, widthOne, heightOne, null, 0, widthOne);
+
+        int widthTwo = bufferedImage2.getWidth();
+        int heightTwo = bufferedImage2.getHeight();
+        int[] pixelsTwo = bufferedImage2.getRGB(0, 0, widthTwo, heightTwo, null, 0, widthTwo);
+
+        System.out.println(Arrays.equals(pixelsOne, pixelsTwo));
     }
 
     private static int[] generateMatrix(int radius) {
