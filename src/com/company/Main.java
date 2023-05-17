@@ -104,7 +104,6 @@ public class Main {
                 int startY = sectionHeight * finalI;
                 int extra = finalI == NUM_OF_THREADS - 1 ? yRem : 0;
                 int[] section = image.getRGB(0, startY, width, sectionHeight + extra, null, 0, width);
-                System.out.println("h check " + sectionHeight + " " + extra + " " + section.length);
                 System.arraycopy(section, 0, input, sectionHeight * width * finalI, section.length);
             }));
         }
@@ -217,7 +216,7 @@ public class Main {
         int heightTwo = bufferedImage2.getHeight();
         int[] pixelsTwo = bufferedImage2.getRGB(0, 0, widthTwo, heightTwo, null, 0, widthTwo);
 
-        System.out.println(Arrays.equals(pixelsOne, pixelsTwo));
+        System.out.println("Images are identical: " + Arrays.equals(pixelsOne, pixelsTwo));
     }
 
     private static int[] generateMatrix(int radius) {
