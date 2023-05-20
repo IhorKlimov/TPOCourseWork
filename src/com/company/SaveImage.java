@@ -8,7 +8,7 @@ import java.io.IOException;
 
 public class SaveImage {
     public static void saveImage(BufferedImage bufferedImage) {
-        File output = new File("blurred.png");
+        File output = new File("blurred2.png");
         try {
             ImageIO.write(getScaledImage(bufferedImage), "png", output);
         } catch (IOException e) {

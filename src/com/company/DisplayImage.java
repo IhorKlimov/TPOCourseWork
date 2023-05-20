@@ -8,8 +8,8 @@ import java.io.IOException;
 public class DisplayImage {
 
     public DisplayImage(BufferedImage img) throws IOException {
-        int width = img.getWidth();
-        int height = img.getHeight();
+        int width = img.getWidth() / 5;
+        int height = img.getHeight()/ 5;
 
         ImageIcon icon = new ImageIcon(getScaledImage(img, width, height));
         JFrame frame = new JFrame();

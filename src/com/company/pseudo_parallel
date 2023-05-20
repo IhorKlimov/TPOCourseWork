@@ -1,0 +1,43 @@
+numOfThreads = 5
+
+image = file("street.jpeg")
+pixelsArray = []
+sectionHeight = image.getHeight() / numOfThreads
+widthInPixels = image.getWidth()
+
+for index in range(numOfThreads):
+    startY = sectionHeight * index
+    endY = start + sectionHeight
+    Thread.start({
+        section = image.getPixels(0, widthInPixels, startY, endY)
+        insertPixels(index, section, pixelsArray)
+    })
+
+weights = [1, 2, 1, 2, 4, 2, 1, 2, 1]
+result = []
+
+for index in range(numOfThreads):
+    pixelSection = pixelsArray.getSection(index)
+
+    for pixelIndex, pixel in pixelSection:
+        red = pixel.getRed()
+        green = pixel.getGreen()
+        blue = pixel.getBlue()
+
+        resultRed = 0
+        resultGreen = 0
+        resultBlue = 0
+
+        for surrounding in pixel.getAllSurroundingPixels():
+            resultRed += surrounding * weights.getWeightFor(surrounding)
+            resultGreen += surrounding * weights.getWeightFor(surrounding)
+            resultBlue += surrounding * weights.getWeightFor(surrounding)
+
+        totalWeight = weights.getTotalSum()
+        resultPixel = Pixel(resultRed, resultGreen, resultBlue)
+        result.set(pixelIndex, resultPixel)
+
+resultImage = Image(result)
+displayImage(resultImage)
+
+

@@ -4,20 +4,27 @@ import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.IntStream;
 
+import static com.company.SaveImage.saveImage;
 import static java.lang.Math.abs;
 
 public class Main {
-    private static final int NUM_OF_THREADS = 2;
+    private static final int NUM_OF_THREADS = 10;
     private static final int NUM_OF_BLURS = 1;
+    private static String[] images = new String[]{
+            "nature8.jpg", "beach2.jpeg", "beach3.jpeg",
+            "new_street1.jpg", "new_street2.jpg", "new_street3.jpg", "new_street4.jpg",
+            "nature1.jpg", "nature3.jpg",
+            "nature4.jpg", "nature5.jpg", "nature6.jpg", "nature7.jpeg"
+    };
+    private static Map<Long, Long> results = new HashMap<>();
     private static final ExecutorService threadPool = Executors.newFixedThreadPool(NUM_OF_THREADS);
+    private static final int RADIUS = 7;
 
     public static BufferedImage singleThreadBlur(BufferedImage image, int[] filter, int filterWidth) {
         if (filter.length % filterWidth != 0) {
@@ -35,15 +42,20 @@ public class Main {
 
         int[] output = new int[input.length];
 
+//        for (int i = 0; i < input.length; i++) {
+//            output[i] = 255 << 24 | 0 << 16 | 0 << 8 | 0;
+//        }
+
+
         final int pixelIndexOffset = width - filterWidth;
         final int centerOffsetX = filterWidth / 2;
         final int centerOffsetY = filter.length / filterWidth / 2;
 
         int h = (height - filter.length / filterWidth + 1);
         int w = (width - filterWidth + 1);
+        System.out.println("width check " + w + " " + filterWidth);
 
         long loopStart = System.currentTimeMillis();
-
         for (int y = 0; y < h; y++) {
             for (int x = 0; x < w; x++) {
                 int r = 0;
@@ -180,23 +192,24 @@ public class Main {
         return result;
     }
 
-    private static BufferedImage blurImage(boolean isMultiThread) {
-        int radius = 1;
-        int filterWidth = radius * 2 + 1;
-        int[] filter = generateMatrix(radius);
+    private static BufferedImage blurImage(String fileName) {
+        int filterWidth = RADIUS * 2 + 1;
+        int[] filter = generateMatrix(RADIUS);
         try {
-            BufferedImage image = ImageIO.read(new File("street3.jpeg"));
+            BufferedImage image = ImageIO.read(new File(fileName));
             long start = System.currentTimeMillis();
             for (int i = 0; i < NUM_OF_BLURS; i++) {
-                if (isMultiThread) {
-                    image = multiThreadBlur(image, filter, filterWidth);
-                } else {
+                if (NUM_OF_THREADS == 1) {
                     image = singleThreadBlur(image, filter, filterWidth);
+                } else {
+                    image = multiThreadBlur(image, filter, filterWidth);
                 }
             }
-            System.out.println("Total time: " + (System.currentTimeMillis() - start));
+            long totalTime = System.currentTimeMillis() - start;
+            System.out.println("Total time: " + totalTime + " for " + image.getWidth() * image.getHeight());
+            results.put((long) image.getWidth() * image.getHeight(), totalTime);
             new DisplayImage(image);
-//            saveImage(blurred);
+            saveImage(image);
             return image;
         } catch (IOException e) {
             e.printStackTrace();
@@ -205,18 +218,24 @@ public class Main {
     }
 
     public static void main(String[] args) {
-        BufferedImage bufferedImage = blurImage(false);
-        BufferedImage bufferedImage2 = blurImage(true);
+//        for (String image : images) {
+        String image = "street.jpeg";
+        BufferedImage bufferedImage = blurImage(image);
+//        }
+        results.keySet().stream().sorted().forEach(pixels -> {
+            System.out.println("Total time: " + results.get(pixels) + " for " + pixels);
+        });
+//        BufferedImage bufferedImage2 = blurImage(true);
 
-        int widthOne = bufferedImage.getWidth();
-        int heightOne = bufferedImage.getHeight();
-        int[] pixelsOne = bufferedImage.getRGB(0, 0, widthOne, heightOne, null, 0, widthOne);
+//        int widthOne = bufferedImage.getWidth();
+//        int heightOne = bufferedImage.getHeight();
+//        int[] pixelsOne = bufferedImage.getRGB(0, 0, widthOne, heightOne, null, 0, widthOne);
+//
+//        int widthTwo = bufferedImage2.getWidth();
+//        int heightTwo = bufferedImage2.getHeight();
+//        int[] pixelsTwo = bufferedImage2.getRGB(0, 0, widthTwo, heightTwo, null, 0, widthTwo);
 
-        int widthTwo = bufferedImage2.getWidth();
-        int heightTwo = bufferedImage2.getHeight();
-        int[] pixelsTwo = bufferedImage2.getRGB(0, 0, widthTwo, heightTwo, null, 0, widthTwo);
-
-        System.out.println("Images are identical: " + Arrays.equals(pixelsOne, pixelsTwo));
+//        System.out.println("Images are identical: " + Arrays.equals(pixelsOne, pixelsTwo));
     }
 
     private static int[] generateMatrix(int radius) {
@@ -240,9 +259,8 @@ public class Main {
 
                 res += result[currentIndex] + " ";
             }
-            System.out.println(res);
+//            System.out.println(res);
         }
         return result;
     }
-
 }
